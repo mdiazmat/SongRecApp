@@ -112,10 +112,10 @@ def generate_hybrid_playlist_from_prompt(prompt, df):
 st.set_page_config(page_title="🎵 Playlist Recommender")
 st.title("🎵 Playlist Recommender")
 
-st.subheader("📂 Your Playlists"):
-    for name, pl in playlists.items():
-        with st.expander(f"{name} Playlist"):
-            st.dataframe(pl[['track_name', 'artists']])
+st.subheader("📂 Your Playlists")
+for name, pl in playlists.items():
+    with st.expander(f"{name} Playlist"):
+         st.dataframe(pl[['track_name', 'artists']])
 
 st.markdown("---")
 st.subheader("✨ Generate a New Playlist")

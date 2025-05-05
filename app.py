@@ -20,6 +20,7 @@ from sklearn.neighbors import NearestNeighbors
 # --- Load data ---
 df = pd.read_csv("dataset.csv")
 df.drop_duplicates(subset=["track_name", "artists"], inplace=True)
+df.reset_index(drop=True, inplace=True)
 
 # --- Feature selection ---
 features = ['tempo', 'energy', 'valence', 'danceability', 'acousticness']

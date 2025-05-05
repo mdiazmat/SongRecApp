@@ -109,10 +109,10 @@ def generate_hybrid_playlist_from_prompt(prompt, df):
     return filtered.head(15)
 
 # --- Streamlit UI ---
-st.set_page_config(page_title="🎵 AI Playlist Recommender")
-st.title("🎵 AI Playlist Recommender")
+st.set_page_config(page_title="🎵 Playlist Recommender")
+st.title("🎵 Playlist Recommender")
 
-with st.expander("📂 Your Example Playlists"):
+st.subheader("📂 Your Playlists"):
     for name, pl in playlists.items():
         with st.expander(f"{name} Playlist"):
             st.dataframe(pl[['track_name', 'artists']])

@@ -13,6 +13,7 @@ import numpy as np
 import requests
 import json
 import os
+import re
 from sklearn.preprocessing import MinMaxScaler
 from sklearn.metrics.pairwise import cosine_similarity
 from sklearn.neighbors import NearestNeighbors

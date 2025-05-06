@@ -116,7 +116,7 @@ st.markdown("### 📂 Your Playlists")
 
 for name, playlist_df in playlists.items():
     with st.expander(f"{name} Playlist"):
-         st.dataframe(pl[['track_name', 'artists']])
+         st.dataframe(playlist_df[['track_name', 'artists']])
 
 st.markdown("---")
 st.subheader("✨ Generate a New Playlist")

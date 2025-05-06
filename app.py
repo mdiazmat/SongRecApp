@@ -84,14 +84,17 @@ def get_features_from_prompt(prompt):
             ]
         }
         response = requests.post("https://api.groq.com/openai/v1/chat/completions", headers=headers, json=payload)
-        if response.status_code != 200:
-            st.error(f"Groq API Error: {response.status_code} - {response.text}")
-            return None
-
-        st.code(response.text, language='json')
-
+        response.raise_for_status()
         reply = response.json()['choices'][0]['message']['content']
-        return json.loads(reply)
+
+        # Extract the JSON portion from the markdown string
+        match = re.search(r'```json\n(.*?)```', reply, re.DOTALL)
+        if match:
+            json_str = match.group(1)
+            return json.loads(json_str)
+        else:
+            st.error("Could not find JSON in the response.")
+            return None
     
     except Exception as e:
         st.error("Groq API error:" + str(e))

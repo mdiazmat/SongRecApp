@@ -79,7 +79,7 @@ def get_features_from_prompt(prompt):
             "messages": [
                 {
                     "role": "user",
-                    "content": f"Given the user prompt: '{prompt}', return ideal Spotify audio features (genre, tempo range, energy, valence, etc.) as a JSON object."
+                    "content": f"Extract keywords and audio preferences from the prompt: '{prompt}'. Return a JSON object with matchable audio features and a list of music-related keywords."
                 }
             ]
         }
@@ -97,6 +97,8 @@ def generate_hybrid_playlist_from_prompt(prompt, df):
     if prefs is None:
         return pd.DataFrame()
 
+    keywords = prefs.pop("keywords", [])
+
     filtered = df.copy()
     for feature, value in prefs.items():
         if feature in df.columns:
@@ -104,8 +106,15 @@ def generate_hybrid_playlist_from_prompt(prompt, df):
                 filtered = filtered[(filtered[feature] >= value[0]) & (filtered[feature] <= value[1])]
             elif isinstance(value, (int, float)):
                 filtered = filtered[np.isclose(filtered[feature], value, atol=0.1)]
-            elif isinstance(value, str):
-                filtered = filtered[filtered[feature].str.lower().str.contains(value.lower())]
+
+    if keywords:
+        match_mask = pd.Series([False] * len(filtered))
+        for kw in keywords:
+            kw_mask = filtered[['track_name', 'album_name', 'artists', 'track_genre']].apply(
+                lambda row: row.astype(str).str.lower().str.contains(kw.lower()).any(), axis=1)
+            match_mask |= kw_mask
+        filtered = filtered[match_mask]
+
     return filtered.head(15)
 
 # --- Streamlit UI ---

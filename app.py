@@ -80,19 +80,29 @@ def get_features_from_prompt(prompt):
             "messages": [
                 {
                     "role": "user",
-                    "content": f"Given the user prompt: '{prompt}', return ideal Spotify audio features (genre, tempo range, energy, valence, etc.) as a JSON object."
+                    "content": f"""
+Given the user prompt: '{prompt}', extract ideal Spotify audio features and mood keywords. 
+Return ONLY a valid JSON object with two keys: 'audioFeatures' and 'keywords'. 
+Do not include any explanations or markdown formatting. The structure must be:
+{{
+  \"audioFeatures\": {{
+    \"tempo\": [min, max],
+    \"energy\": [min, max],
+    \"valence\": [min, max],
+    \"genre\": [\"genre1\", \"genre2\"]
+  }},
+  \"keywords\": [\"keyword1\", \"keyword2\"]
+}}
+"""
                 }
             ]
         }
-        response = requests.post("https://api.groq.com/openai/v1/chat/completions", headers=headers, json=payload)
-        response.raise_for_status()
-        reply = response.json()['choices'][0]['message']['content']
-
-        # Extract the JSON portion from the markdown string
-        match = re.search(r'```json\n(.*?)```', reply, re.DOTALL)
+        res = requests.post("https://api.groq.com/openai/v1/chat/completions", headers=headers, json=payload)
+        res.raise_for_status()
+        reply = res.json()['choices'][0]['message']['content']
+        match = re.search(r'\{.*\}', reply, re.DOTALL)
         if match:
-            json_str = match.group(1)
-            return json.loads(json_str)
+            return json.loads(match.group())
         else:
             st.error("Could not find JSON in the response.")
             return None

@@ -105,6 +105,7 @@ Do not include any explanations or markdown formatting. The structure must be:
         reply = res.json()['choices'][0]['message']['content']
         match = re.search(r'\{.*\}', reply, re.DOTALL)
         if match:
+            st.code(reply
             return json.loads(match.group())
         else:
             st.error("Could not find JSON in the response.")

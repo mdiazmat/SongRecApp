@@ -120,7 +120,7 @@ def generate_hybrid_playlist_from_prompt(prompt, df):
     if prefs is None:
         return pd.DataFrame()
 
-     filtered = df.copy()
+    filtered = df.copy()
     audio_feats = prefs.get("audioFeatures", {})
     keywords = prefs.get("keywords", [])
 
@@ -142,7 +142,6 @@ def generate_hybrid_playlist_from_prompt(prompt, df):
         filtered = filtered[keyword_mask]
 
     return filtered.head(15)
-
 
 # --- Streamlit UI ---
 st.set_page_config(page_title="🎵 Playlist Recommender")

@@ -79,7 +79,7 @@ def get_features_from_prompt(prompt):
             "messages": [
                 {
                     "role": "user",
-                    "content": f"Extract keywords and audio preferences from the prompt: '{prompt}'. Return a JSON object with matchable audio features and a list of music-related keywords."
+                    "content": f"Given the user prompt: '{prompt}', return ideal Spotify audio features (genre, tempo range, energy, valence, etc.) as a JSON object."
                 }
             ]
         }

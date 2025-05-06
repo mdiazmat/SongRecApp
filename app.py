@@ -113,7 +113,7 @@ st.set_page_config(page_title="🎵 Playlist Recommender")
 st.title("🎵 Playlist Recommender")
 
 st.subheader("📂 Your Playlists")
-for name, pl in playlists.items():
+for name, playlist_df in playlists.items():
     with st.expander(f"{name} Playlist"):
          st.dataframe(pl[['track_name', 'artists']])
 

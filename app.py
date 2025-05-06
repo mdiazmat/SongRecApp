@@ -18,7 +18,7 @@ from sklearn.metrics.pairwise import cosine_similarity
 from sklearn.neighbors import NearestNeighbors
 
 # --- Load data ---
-df = pd.read_csv("dataset.csv")
+df = pd.read_csv("dataset.csv", quotechar='"', on_bad_lines='skip', encoding='utf-8')
 df.drop_duplicates(subset=["track_name", "artists"], inplace=True)
 df.reset_index(drop=True, inplace=True)
 

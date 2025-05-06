@@ -85,13 +85,16 @@ Given the user prompt: '{prompt}', extract ideal Spotify audio features and mood
 Return ONLY a valid JSON object with two keys: 'audioFeatures' and 'keywords'. 
 Do not include any explanations or markdown formatting. The structure must be:
 {{
-  \"audioFeatures\": {{
-    \"tempo\": [min, max],
-    \"energy\": [min, max],
-    \"valence\": [min, max],
-    \"genre\": [\"genre1\", \"genre2\"]
+  "audioFeatures": {{
+    "tempo": [min, max],
+    "energy": [min, max],
+    "valence": [min, max],
+    "danceability": [min, max],
+    "acousticness": [min, max],
+    "genre": ["genre1", "genre2"],
+
   }},
-  \"keywords\": [\"keyword1\", \"keyword2\"]
+  "keywords": ["keyword1", "keyword2"]
 }}
 """
                 }
@@ -117,25 +120,29 @@ def generate_hybrid_playlist_from_prompt(prompt, df):
     if prefs is None:
         return pd.DataFrame()
 
-    keywords = prefs.pop("keywords", [])
+     filtered = df.copy()
+    audio_feats = prefs.get("audioFeatures", {})
+    keywords = prefs.get("keywords", [])
 
-    filtered = df.copy()
-    for feature, value in prefs.items():
+    for feature, value in audio_feats.items():
         if feature in df.columns:
             if isinstance(value, list) and len(value) == 2:
                 filtered = filtered[(filtered[feature] >= value[0]) & (filtered[feature] <= value[1])]
             elif isinstance(value, (int, float)):
                 filtered = filtered[np.isclose(filtered[feature], value, atol=0.1)]
+            elif isinstance(value, str):
+                filtered = filtered[filtered[feature].str.lower().str.contains(value.lower())]
 
     if keywords:
-        match_mask = pd.Series([False] * len(filtered))
+        keyword_mask = pd.Series(False, index=filtered.index)
+        text_columns = ['track_name', 'album_name', 'artists', 'track_genre']
         for kw in keywords:
-            kw_mask = filtered[['track_name', 'album_name', 'artists', 'track_genre']].apply(
-                lambda row: row.astype(str).str.lower().str.contains(kw.lower()).any(), axis=1)
-            match_mask |= kw_mask
-        filtered = filtered[match_mask]
+            for col in text_columns:
+                keyword_mask |= filtered[col].str.lower().str.contains(kw.lower(), na=False)
+        filtered = filtered[keyword_mask]
 
     return filtered.head(15)
+
 
 # --- Streamlit UI ---
 st.set_page_config(page_title="🎵 Playlist Recommender")

@@ -88,7 +88,7 @@ def get_features_from_prompt(prompt):
         reply = res.json()['choices'][0]['message']['content']
         return json.loads(reply)
     except Exception as e:
-        st.error("Groq API error: {e}")
+        st.error("Groq API error:" + str(e))
         return None
 
 # --- Generate playlist ---

@@ -235,7 +235,9 @@ st.set_page_config(page_title="🎵 Playlist Recommender") st.title("🎵 Playli
 st.markdown("### 📂 Your Playlists")
 
 for name, playlist_df in playlists.items():
-    with st.expander(f"{name} Playlist"): st.dataframe(playlist_df[['track_name', 'artists', 'track_genre']], use_container_width=True)
+    with st.expander(f"{name} Playlist"): 
+        st.dataframe(playlist_df[['track_name', 'artists', 'track_genre']], use_container_width=True)
+        
 st.markdown("---") 
 st.subheader("✨ Generate a New Playlist") 
 prompt = st.text_input("Describe the kind of playlist you want:", placeholder="e.g. sad r&b, workout mix, beach day") 
@@ -243,3 +245,8 @@ prompt = st.text_input("Describe the kind of playlist you want:", placeholder="e
 if st.button("🎧 Generate"):
     with st.spinner("Generating your playlist..."):
         playlist = generate_hybrid_playlist_from_prompt(prompt, hybrid_df) 
+        if not playlist.empty:
+            st.success("Here's you playlist!")
+            st.dataframe(palylist[['track_name', 'artists', 'track_genre']])
+        else:
+            st.warning("No matching songs found.")

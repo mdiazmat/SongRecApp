@@ -156,11 +156,11 @@ if genres:
 
     if expanded:
         gcol= filtered["track_genre"].astype(str).str.lower()
-            pattern = r"(" + "|".join(re.escape(x) for x in expanded) + r")"
-            gmask = gcol.str.contains(pattern, na=False, regex=True)
+        pattern = r"(" + "|".join(re.escape(x) for x in expanded) + r")"
+        gmask = gcol.str.contains(pattern, na=False, regex=True)
             # apply genre filter only if it leaves enough songs
-            if gmask.sum() >= MIN_RESULTS:
-                filtered = filtered[gmask]
+        if gmask.sum() >= MIN_RESULTS:
+            filtered = filtered[gmask]
 # ----- Step 2) Numeric features -----
 for f in ["tempo", "energy", "valence", "danceability", "acousticness"]:
     if f in audio_feats:

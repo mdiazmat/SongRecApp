@@ -230,7 +230,8 @@ return filtered.drop_duplicates(subset=['track_name', 'artists']).head(max_resul
 
 
 # --- Streamlit UI --- 
-st.set_page_config(page_title="🎵 Playlist Recommender") st.title("🎵 Playlist Recommender")
+st.set_page_config(page_title="🎵 Playlist Recommender") 
+st.title("🎵 Playlist Recommender")
 
 st.markdown("### 📂 Your Playlists")
 

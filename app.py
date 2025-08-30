@@ -141,92 +141,96 @@ def generate_hybrid_playlist_from_prompt(prompt, df):
     audio_feats = prefs.get("audioFeatures", {}) or {}
     keywords = prefs.get("keywords", []) or []
 
-# ----- Step 1) Genre handling (map "genre" -> track_genre with synonyms) ------
-genres = audio_feats.pop("genre", None)
-if genres:
-    if isinstance(genres, str):
-        genres = [genres] 
-    genres = [str(g).lower().strip() for g in genres if g]
+    # ----- Step 1) Genre handling (map "genre" -> track_genre with synonyms) ------
+    genres = audio_feats.pop("genre", None)
+    if genres:
+        if isinstance(genres, str):
+            genres = [genres]
+        genres = [str(g).lower().strip() for g in genres if g]
 
-    expanded = set()
-    for g in genres: 
-        expanded.add(g)
-        for s in genre_synonyms.get(g, []):
-            expanded.add(s.lower())
+        expanded = set()
+        for g in genres:
+            expanded.add(g)
+            for s in genre_synonyms.get(g, []):
+                expanded.add(s.lower())
 
-    if expanded:
-        gcol= filtered["track_genre"].astype(str).str.lower()
-        pattern = r"(" + "|".join(re.escape(x) for x in expanded) + r")"
-        gmask = gcol.str.contains(pattern, na=False, regex=True)
+        if expanded:
+            gcol = filtered["track_genre"].astype(str).str.lower()
+            pattern = r"(" + "|".join(re.escape(x) for x in expanded) + r")"
+            gmask = gcol.str.contains(pattern, na=False, regex=True)
             # apply genre filter only if it leaves enough songs
-        if gmask.sum() >= MIN_RESULTS:
-            filtered = filtered[gmask]
-# ----- Step 2) Numeric features -----
-for f in ["tempo", "energy", "valence", "danceability", "acousticness"]:
-    if f in audio_feats:
-        val = audio_feats[f]
-        if isinstance(val, list) and len(val) == 2:
-            lo, hi = val
-            if f == "tempo":
-                lo, hi = float(lo), float(hi)
-            else:
-                lo, hi = max(0.0, float(lo)), min(1.0, float(hi))
-            filtered = filtered[filtered[f].between(lo, hi)]
-        elif isinstance(val, (int, float, np.floating)):
-            tol = 3.0 if f == "tempo" else 0.05
-            filtered = filtered[filtered[f].between(val - tol, val + tol)]
+            if gmask.sum() >= min_results:   # <-- use lowercase constant
+                filtered = filtered[gmask]
 
-# ----- Step 3) Keywords (soft: filter only if generous; else boost) ------
-kw_mask = None
-if keywords: 
-    kw_mask = pd.Series(False, index=filtered.index)
-    text_cols = ['track_name', 'album_name', 'artists', 'track_genre']
-    for kw in keywords:
-        kwl = str(kw).lower()
-        for col in text_cols: 
-            kw_mask |= filtered[col].astype(str).str.lower().str.contains(kwl, na=False)
-            
-        if kw_maks.sum() >= min_results:
+    # ----- Step 2) Numeric features -----
+    for f in ["tempo", "energy", "valence", "danceability", "acousticness"]:
+        if f in audio_feats:
+            val = audio_feats[f]
+            if isinstance(val, list) and len(val) == 2:
+                lo, hi = val
+                if f == "tempo":
+                    lo, hi = float(lo), float(hi)
+                else:
+                    lo, hi = max(0.0, float(lo)), min(1.0, float(hi))
+                filtered = filtered[filtered[f].between(lo, hi)]
+            elif isinstance(val, (int, float, np.floating)):
+                tol = 3.0 if f == "tempo" else 0.05
+                filtered = filtered[filtered[f].between(val - tol, val + tol)]
+
+    # ----- Step 3) Keywords (soft: filter only if generous; else boost) ------
+    kw_mask = None
+    if keywords:
+        kw_mask = pd.Series(False, index=filtered.index)
+        text_cols = ['track_name', 'album_name', 'artists', 'track_genre']
+        for kw in keywords:
+            kwl = str(kw).lower()
+            for col in text_cols:
+                kw_mask |= filtered[col].astype(str).str.lower().str.contains(kwl, na=False)
+
+        if kw_mask.sum() >= min_results:
             filtered = filtered[kw_mask]
         else:
-            if "hybrid_score" in filtered.columns: # Creates a soft boost and nudges up rows that match
+            # soft boost: nudge up rows that match keywords
+            if "hybrid_score" in filtered.columns:
                 filtered.loc[kw_mask, "hybrid_score"] = filtered.loc[kw_mask, "hybrid_score"] + 0.25
 
-# ----- Step 4) Guarantee at least min_results by widening once if needed -----
-def _widen_once(base_df): 
-    widened = base_df.copy()
-    for f in ["tempo", "energy", "valence", "danceability", "acousticness"]:
-        val = audio_feats.get(f)
-        if isinstance(val, list) and len(val) == 2:
-            lo, hi = val
-            if f == "tempo":
-                lo, hi = float(lo) - 10, float(hi) + 10
-            else:
-                lo, hi = max(0.0, float(lo) - 0.1), min(1.0, float(hi) + 0.1) 
-            widened = widened[widened[f].between(lo, hi)]
-    return widened
+    # ----- Step 4) Guarantee at least min_results by widening once if needed -----
+    def _widen_once(base_df):
+        widened = base_df.copy()
+        for f in ["tempo", "energy", "valence", "danceability", "acousticness"]:
+            val = audio_feats.get(f)
+            if isinstance(val, list) and len(val) == 2:
+                lo, hi = val
+                if f == "tempo":
+                    lo, hi = float(lo) - 10, float(hi) + 10
+                else:
+                    lo, hi = max(0.0, float(lo) - 0.1), min(1.0, float(hi) + 0.1)
+                widened = widened[widened[f].between(lo, hi)]
+        return widened
 
-if len(filtered) < min_results: # Start from og df to widen ranges 
-    filtered_try = _widen_once(df) # Reapply genre if it was generous enough
-    if genres: 
-        gcol = filtered_try["track_genre"].astype(str).str.lower()
-        all_terms = set(genres)
-        for g in genres: 
-            all_terms.update(genre_synonyms.get(g, []))
-        pattern = r"(" + "|".join(re.escape(x) for x in all_terms) + r")"
-        gmask2 = gcol.str.contains(pattern, na=False, regex=True)
-        if gmask2.sum() >= min_results:
-            filtered_try = filtered_try[gmask2]
-    if len(filtered_try) > len(filtered):
-        filtered = filtered_try
+    if len(filtered) < min_results:
+        # start from original df to widen ranges afresh
+        filtered_try = _widen_once(df)
+        if genres:
+            gcol = filtered_try["track_genre"].astype(str).str.lower()
+            all_terms = set(genres)
+            for g in genres:
+                all_terms.update(genre_synonyms.get(g, []))
+            pattern = r"(" + "|".join(re.escape(x) for x in all_terms) + r")"
+            gmask2 = gcol.str.contains(pattern, na=False, regex=True)
+            if gmask2.sum() >= min_results:
+                filtered_try = filtered_try[gmask2]
+        if len(filtered_try) > len(filtered):
+            filtered = filtered_try
 
-# ----- 5) Sort and cap -----
-if "hybrid_score" in filtered.columns: 
-    filtered = filtered.sort_values("hybrid_score", ascending=False)
-else:
-    filtered = filtered.sort_values(["energy", "danceability", "valence"], ascending=False)
+    # ----- Step 5) Sort and cap -----
+    if "hybrid_score" in filtered.columns:
+        filtered = filtered.sort_values("hybrid_score", ascending=False)
+    else:
+        filtered = filtered.sort_values(["energy", "danceability", "valence"], ascending=False)
 
-return filtered.drop_duplicates(subset=['track_name', 'artists']).head(max_results)
+    return filtered.drop_duplicates(subset=['track_name', 'artists']).head(max_results)
+
 
 # --- Streamlit UI --- 
 st.set_page_config(page_title="🎵 Playlist Recommender") 

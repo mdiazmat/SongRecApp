@@ -23,8 +23,13 @@ df = pd.read_csv("dataset.csv", quotechar='"', on_bad_lines='skip', encoding='ut
 df.drop_duplicates(subset=["track_name", "artists"], inplace=True)
 df.reset_index(drop=True, inplace=True)
 
+# --- Checks audio features to be numeric and drop any NaNs ---
+num_cols = ['tempo', 'energy', 'valence', 'danceability', 'acousticness']
+df[num_cols] = df[num_cols].apply(pd.to_numeric, errors='coerce')
+df.dropna(subset=num_cols, how='any', inplace=True)
+
 # --- Feature selection ---
-features = ['tempo', 'energy', 'valence', 'danceability', 'acousticness']
+features = num_cols
 scaler = MinMaxScaler()
 df_scaled = scaler.fit_transform(df[features])
 
@@ -49,7 +54,7 @@ knn_model.fit(df_scaled)
 collab_recs = []
 for song_vec in user_scaled:
     distances, indices = knn_model.kneighbors([song_vec])
-    for idx in indices[0][1:]:  # skip the first, it's the song itself
+    for idx in indices[0]: 
         collab_recs.append(idx)
 
 collab_scores = pd.Series(collab_recs).value_counts().head(50)
@@ -65,7 +70,7 @@ content_df['content_score'] = content_scores
 # --- Combine for Hybrid ---
 hybrid_df = df.copy()
 hybrid_df['content_score'] = content_scores
-hybrid_df['collab_score'] = hybrid_df.index.map(collab_scores).fillna(0)
+hybrid_df['collab_score'] = hybrid_df.index.map(collab_scores).fillna(0).astype(float) # makes sure collab_score is float-safe
 hybrid_df['hybrid_score'] = hybrid_df['content_score'] + hybrid_df['collab_score']
 hybrid_df.sort_values(by='hybrid_score', ascending=False, inplace=True)
 hybrid_df.drop_duplicates(subset=['track_name', 'artists'], inplace=True)

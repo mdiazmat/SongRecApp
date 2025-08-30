@@ -221,4 +221,25 @@ if len(filtered) < min_results: # Start from og df to widen ranges
         filtered = filtered_try
 
 # ----- 5) Sort and cap -----
-if "hybrid_score"
+if "hybrid_score" in filtered.columns: 
+    filtered = filtered.sort_values("hybrid_score", ascending=False)
+else:
+    filtered = filtered.sort_values(["energy", "danceability", "valence"], ascending=False)
+
+return filtered.drop_duplicates(subset=['track_name', 'artists']).head(max_results)
+
+
+# --- Streamlit UI --- 
+st.set_page_config(page_title="🎵 Playlist Recommender") st.title("🎵 Playlist Recommender")
+
+st.markdown("### 📂 Your Playlists")
+
+for name, playlist_df in playlists.items():
+    with st.expander(f"{name} Playlist"): st.dataframe(playlist_df[['track_name', 'artists', 'track_genre']], use_container_width=True)
+st.markdown("---") 
+st.subheader("✨ Generate a New Playlist") 
+prompt = st.text_input("Describe the kind of playlist you want:", placeholder="e.g. sad r&b, workout mix, beach day") 
+
+if st.button("🎧 Generate"):
+    with st.spinner("Generating your playlist..."):
+        playlist = generate_hybrid_playlist_from_prompt(prompt, hybrid_df) 

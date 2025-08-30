@@ -170,7 +170,7 @@ for f in ["tempo", "energy", "valence", "danceability", "acousticness"]:
             if f == "tempo":
                 lo, hi = float(lo), float(hi)
             else:
-                lo, hi = max(0.0, float(lo)), min(1.0 float(hi))
+                lo, hi = max(0.0, float(lo)), min(1.0, float(hi))
             filtered = filtered[filtered[f].between(lo, hi)]
         elif isinstance(val, (int, float, np.floating)):
             tol = 3.0 if f == "tempo" else 0.05

@@ -228,7 +228,6 @@ else:
 
 return filtered.drop_duplicates(subset=['track_name', 'artists']).head(max_results)
 
-
 # --- Streamlit UI --- 
 st.set_page_config(page_title="🎵 Playlist Recommender") 
 st.title("🎵 Playlist Recommender")
@@ -248,6 +247,6 @@ if st.button("🎧 Generate"):
         playlist = generate_hybrid_playlist_from_prompt(prompt, hybrid_df) 
         if not playlist.empty:
             st.success("Here's you playlist!")
-            st.dataframe(palylist[['track_name', 'artists', 'track_genre']])
+            st.dataframe(playlist[['track_name', 'artists', 'track_genre']])
         else:
             st.warning("No matching songs found.")

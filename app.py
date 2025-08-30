@@ -33,6 +33,9 @@ playlists = {
     "R&B": df[(df['track_genre'] == 'r-n-b') & (df['tempo'] >= 70) & (df['tempo'] <= 110)].head(10),
     "Hype Rap": df[(df['track_genre'] == 'hip-hop') & (df['energy'] >= 0.7)].head(10),
     "Beach Day": df[(df['track_genre'].isin(['reggae', 'latin', 'chill'])) & (df['valence'] > 0.6)].head(10),
+    "Party": df[(df['track_genre'].isin(['party', 'dance', 'edm', 'club'])) & (df['energy'] >=0.7) & (df['tempo'] >=110)].head(10),
+    "Chill Date Night": df[(df['track_genre'].isin(['romance', 'r-n-b', 'soul'])) & (df['tempo'] <= 100) & (df['energy'] <= 0.6) & (df['valence'] >= 0.4)].head(10),
+    "Latino Cleaning": df[(df['track_genre'].isin(['latino', 'salsa', 'reggaeton'])) & (df['tempo'] >= 100) & (df['valence'] >= 0.6)].head(10)
 }
 
 # --- Prepare user history ---

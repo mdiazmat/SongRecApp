@@ -91,7 +91,7 @@ def get_features_from_prompt(prompt):
             "Content-Type": "application/json"
         }
         payload = {
-            "model": "llama3-8b-8192",
+            "model": "llama-3.1-8b-instant",
             "temperature": 0.2, 
             "messages": [
                 {
